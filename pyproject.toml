@@ -2,6 +2,17 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# Tell uv to always fetch torch from the CPU-only PyTorch index.
+# This avoids the full CUDA build (~2.5 GB with nvidia-* libs).
+# Swap to 'pytorch-cu121' for GPU support.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
 [project]
 name = "graphforge"
 version = "0.1.0"
@@ -17,7 +28,7 @@ dependencies = [
     "pandas>=2.2",
     "scipy>=1.13",
 
-    # Deep learning (CPU build; swap for CUDA wheel if GPU available)
+    # Deep learning (CPU build — override in tool.uv.sources for GPU)
     "torch>=2.3,<2.6",
 
     # Graph ML
