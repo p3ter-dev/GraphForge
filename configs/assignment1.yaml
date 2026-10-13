@@ -1,0 +1,36 @@
+# Assignment 1: GCN from Scratch — Experiment Configuration
+# All experiments for Assignment 1 use these settings as defaults.
+# Override on the command line: python scripts/train_gcn_scratch.py --seed 42
+
+experiment:
+  name: "a1_gcn_from_scratch"
+  description: "GCN vs MLP vs randomized-edges on synthetic two-community graph"
+
+# Data generation
+data:
+  n_nodes: 120
+  n_features: 3
+  p_intra: 0.25        # edge probability within same community
+  p_inter: 0.01        # edge probability between communities
+  feature_noise_std: 1.2
+  train_frac: 0.6
+  val_frac: 0.2
+  seed: 42
+
+# Model hyperparameters
+model:
+  hidden_dim: 64
+  dropout: 0.5
+
+# Training
+training:
+  lr: 0.01
+  weight_decay: 5.0e-4
+  n_epochs: 400
+  patience: 50
+  seeds: [42, 123, 999]  # run all three for mean/std
+
+# Ablations
+ablations:
+  randomize_edges: true
+  mlp_baseline: true

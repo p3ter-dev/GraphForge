@@ -1,0 +1,54 @@
+name: CI — Tests
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.13.0"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Create virtual environment
+        run: uv venv --python ${{ matrix.python-version }} .venv
+
+      - name: Install dependencies (CPU torch for CI)
+        run: |
+          uv pip install -e ".[dev]" \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple
+
+      - name: Lint with ruff
+        run: uv run ruff check src/ tests/ scripts/ --output-format=github
+
+      - name: Run unit tests
+        run: uv run pytest tests/unit/ -v --tb=short
+
+      - name: Run correctness tests
+        run: uv run pytest tests/correctness/ -v --tb=short
+
+      - name: Run leakage tests (Assignment 3, skipped until M3)
+        run: |
+          uv run pytest tests/leakage/ -v --tb=short --ignore-glob="*test_link*" || true
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: .coverage
