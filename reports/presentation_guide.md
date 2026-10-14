@@ -103,8 +103,29 @@ Use project-level source configuration (`[tool.uv.sources]`) for packages with m
 
 ---
 
-## Assignment 3: Link Prediction
-*(To be completed in Milestone 3)*
+## Assignment 3: Link Prediction & Data Leakage Guards
+
+### What to say
+> "In Assignment 3, I developed an unsupervised link prediction system on Cora without using document class labels. I compared a Common-Neighbors baseline, a Dot-Product decoder, and a custom Symmetric MLP decoder designed to guarantee order invariance ($s(u, v) \equiv s(v, u)$). Crucially, I engineered automated data leakage guards and ran a deliberately leaky experiment to expose how improper message passing inflates metrics."
+
+### Key results to cite
+| Approach | Test ROC-AUC | Test Average Precision | Status |
+|----------|--------------|------------------------|--------|
+| **Common Neighbors** | 72.12% | 0.7192 | Non-parametric Baseline |
+| **GNN + Dot-Product** | 86.92% | 0.8723 | Valid ($E_{\text{train}}$ message passing) |
+| **GNN + Symmetric MLP** | **92.29%** | **0.9344** | **Valid Champion** |
+| **GNN + Dot-Product (LEAKY)** | 94.17% | 0.9277 | **Fraudulent / Invalid** ($E_{\text{full}}$ leakage) |
+
+### Anticipated Questions & Answers
+
+**Q: How did you ensure your MLP decoder treats undirected links symmetrically?**
+> "In an undirected graph, edge $(u, v)$ is identical to edge $(v, u)$. Simply concatenating $[z_u \,\|\, z_v]$ is order-dependent: the MLP might predict different scores for $(u, v)$ than $(v, u)$. I guaranteed symmetry by combining three invariant operators: $|z_u - z_v|$, $z_u \odot z_v$, and $z_u + z_v$. Because all three operations are commutative, swapping $u$ and $v$ produces the exact same input tensor to the MLP."
+
+**Q: What is the 'Leaky Evaluation' experiment and why is it invalid?**
+> "In link prediction, held-out validation and test edges must be removed from the message-passing graph. In my deliberately leaky experiment, I allowed the GCN to aggregate messages over test edges during evaluation. The ROC-AUC jumped from 86.9% to 94.2%. This gain is completely fraudulent: the model didn't learn to predict future citations; it simply detected that paper $u$ was already exchanging messages with paper $v$."
+
+**Q: Why isn't an unobserved link considered a true negative?**
+> "Under the Open-World Assumption, scientific citation graphs are incomplete. An unobserved link simply means paper $u$ hasn't cited paper $v$ yet. In our top-10 candidate predictions, several unobserved pairs had 0 common citations in the training graph but near-identical text and latent embeddings—indicating high-confidence missing literature links that warrant domain validation."
 
 ---
 

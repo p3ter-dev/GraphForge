@@ -199,8 +199,48 @@ We recommend **GCN** for deployment on Cora and similar academic citation networ
 
 ---
 
-## Assignment 3: Link Prediction
-*(To be completed in Milestone 3)*
+## Assignment 3: Link Prediction and Data Leakage Guards
+
+### 3.1 Problem Formulation & Self-Supervised Objective
+
+We formulate link prediction on the undirected Cora citation network as an unsupervised graph autoencoding task without using document class labels:
+- **Node Features**: $\mathbf{X} \in \mathbb{R}^{2708 \times 1433}$ (bag-of-words text).
+- **Encoder**: A 2-layer GCN mapping nodes to latent embeddings $\mathbf{Z} \in \mathbb{R}^{2708 \times 64}$.
+- **Decoders Compared**:
+  1. **Common-Neighbors Baseline**: Non-parametric heuristic $s_{\text{CN}}(u, v) = |\mathcal{N}_{\text{train}}(u) \cap \mathcal{N}_{\text{train}}(v)|$.
+  2. **Dot-Product Decoder**: $s(u, v) = \sigma(\mathbf{z}_u^T \mathbf{z}_v)$.
+  3. **Symmetric MLP Decoder**: Designed to guarantee that reversing an undirected node pair produces identical scores ($s(u, v) \equiv s(v, u)$). We feed the MLP a concatenation of symmetric pairwise operators:
+     $$\mathbf{h}_{uv} = \left[ |\mathbf{z}_u - \mathbf{z}_v| \,\|\, \mathbf{z}_u \odot \mathbf{z}_v \,\|\, (\mathbf{z}_u + \mathbf{z}_v) \right] \in \mathbb{R}^{3D}$$
+     Because $|\mathbf{z}_u - \mathbf{z}_v| = |\mathbf{z}_v - \mathbf{z}_u|$, $\mathbf{z}_u \odot \mathbf{z}_v = \mathbf{z}_v \odot \mathbf{z}_u$, and $\mathbf{z}_u + \mathbf{z}_v = \mathbf{z}_v + \mathbf{z}_u$, symmetry holds unconditionally.
+
+### 3.2 Data Leakage Guards & Splitting Strategy
+
+Link prediction requires strict message-passing isolation to avoid trivial identity shortcuts:
+1. **Edge-Level Split**: The 5,278 unique undirected edges are split into 4,488 train (85%), 263 val (5%), and 527 test (10%) edges.
+2. **Bidirectional Split Co-occurrence**: Both directions $(u, v)$ and $(v, u)$ are placed in the exact same split.
+3. **Message-Passing Graph ($\mathbf{E}_{\text{train}}$)**: The message-passing graph used by the GNN contains **strictly** the 4,488 training positive links (8,976 directed edges). All held-out validation and test positive edges are strictly excised from $\mathbf{E}_{\text{train}}$.
+4. **Disjoint Negative Sampling**: Negative pairs are sampled without replacement from the set of non-edges, ensuring zero overlap with all observed positive links and across splits.
+5. **Automated Verification**: Rigorous automated unit tests in `tests/leakage/test_link_leakage.py` verify that neither val nor test links (nor their reverse copies) exist in $\mathbf{E}_{\text{train}}$.
+
+### 3.3 Benchmark Results
+
+| Model / Methodology | Message-Passing Graph | Test ROC-AUC | Test Average Precision (AP) |
+|---------------------|-----------------------|--------------|-----------------------------|
+| **Common Neighbors (Baseline)** | $E_{\text{train}}$ strictly | 0.7212 | 0.7192 |
+| **GNN + Dot-Product Decoder** | $E_{\text{train}}$ strictly (Valid) | 0.8692 | 0.8723 |
+| **GNN + Symmetric MLP Decoder** | $E_{\text{train}}$ strictly (Valid) | **0.9229** | **0.9344** |
+| **GNN + Dot-Product (LEAKY)** | $E_{\text{full}}$ (Deliberate Leakage) | 0.9417 | 0.9277 |
+
+*(Results stored in `reports/tables/a3_results.csv`, ROC/PR curves in `reports/figures/a3_roc_pr_curves.png`, and Leaky vs Valid comparison in `reports/figures/a3_leaky_vs_valid.png`)*
+
+### 3.4 Analysis & Key Takeaways
+
+1. **Superiority of Learned Symmetric MLP (+20.17% AUC over Common Neighbors):**
+   The Common Neighbors baseline is crippled whenever two related papers share no mutual citations ($s_{\text{CN}}=0$). In contrast, the GNN + Symmetric MLP combines topological neighborhood representations with deep word-feature semantics, successfully inferring citations across distant paper clusters.
+2. **The Leaky Evaluation Illusion (Fraudulent 94.17% AUC):**
+   When held-out test edges are erroneously retained in the message-passing graph, test ROC-AUC jumps to 94.17%. The GNN passes messages directly between $u$ and $v$ in the forward pass, reducing the link prediction task to an identity check. This experiment proves why message-passing isolation is required for valid generalization.
+3. **Top Candidate Predictions & Open-World Assumption:**
+   Under the Open-World Assumption, unobserved edges in citation networks are **not confirmed negatives**; they represent candidate citations that authors missed or contemporaneous work published simultaneously in parallel venues (`reports/tables/a3_candidate_links.csv`).
 
 ---
 

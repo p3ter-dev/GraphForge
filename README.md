@@ -106,11 +106,27 @@ jupyter notebook notebooks/02_cora_comparison.ipynb
 - Edge sparsification: gradual accuracy decay from 80.6% down to 57.1% as edges are removed
 - Diagnostic error analysis on misclassified boundary/heterophilic citations
 
-### Assignment 3: Link Prediction *(coming in Milestone 3)*
+### Assignment 3: Link Prediction and Data Leakage Guards
+
+**Goal:** Build an unsupervised link prediction system on Cora without category labels, comparing decoders and exposing data leakage.
 
 ```bash
+# Run link prediction benchmark, leakage demonstration, and candidate extraction
 python scripts/train_link_prediction.py
+
+# Run leakage guard automated tests
+pytest tests/leakage/test_link_leakage.py -v
+
+# Open educational notebook
+jupyter notebook notebooks/03_link_prediction.ipynb
 ```
+
+**What it demonstrates:**
+- Strict message-passing isolation: held-out positive links and reverse copies excised from $E_{\text{train}}$
+- Mathematical decoder symmetry: guaranteed $s(u, v) \equiv s(v, u)$ via commutative operator concatenation
+- Learned GNN + Symmetric MLP (92.29% ROC-AUC) vs Common Neighbors heuristic (72.12%)
+- Deliberately leaky evaluation exposing artificial metric inflation (94.17% ROC-AUC)
+- Top 10 candidate citation discoveries under the Open-World Assumption
 
 ### Assignment 4: MLOps Pipeline *(coming in Milestone 4)*
 
@@ -179,6 +195,15 @@ python scripts/train_gcn_scratch.py --seed 42
 | **GAT** | **80.40% ± 0.24%** | **0.7982 ± 0.0018** | 17.14s | 92,373 |
 | **GraphSAGE** | **78.83% ± 0.17%** | **0.7829 ± 0.0018** | 11.96s | 184,391 |
 | **MLP (Baseline)** | **57.63% ± 0.96%** | **0.5621 ± 0.0087** | 3.24s | 92,231 |
+
+### Assignment 3 (Cora Link Prediction)
+
+| Model / Methodology | Message Passing | Test ROC-AUC | Test Average Precision | Status |
+|---------------------|-----------------|--------------|------------------------|--------|
+| **Common Neighbors (Baseline)** | $E_{\text{train}}$ | 0.7212 | 0.7192 | Non-parametric Baseline |
+| **GNN + Dot-Product Decoder** | $E_{\text{train}}$ | 0.8692 | 0.8723 | Valid Evaluation |
+| **GNN + Symmetric MLP Decoder** | $E_{\text{train}}$ | **0.9229** | **0.9344** | **Valid Champion** |
+| **GNN + Dot-Product (LEAKY)** | $E_{\text{full}}$ | 0.9417 | 0.9277 | **Fraudulent / Invalid** |
 
 ---
 
