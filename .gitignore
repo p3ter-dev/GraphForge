@@ -57,3 +57,6 @@ reports/tables/*.csv
 
 # Docker
 docker/.env
+
+# Raw datasets
+data/

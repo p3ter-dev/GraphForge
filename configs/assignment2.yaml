@@ -1,0 +1,48 @@
+# Assignment 2: Architecture Comparison on Cora Configuration
+# Standardized hyperparameter budgets across all models
+
+dataset:
+  name: "Cora"
+  root: "data/Cora"
+  num_features: 1433
+  num_classes: 7
+
+training:
+  max_epochs: 300
+  patience: 40
+  seeds: [42, 123, 999]
+
+models:
+  mlp:
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.5
+    lr: 0.01
+    weight_decay: 0.0005
+
+  gcn:
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.5
+    lr: 0.01
+    weight_decay: 0.0005
+
+  sage:
+    hidden_dim: 64
+    num_layers: 2
+    dropout: 0.5
+    aggr: "mean"
+    lr: 0.01
+    weight_decay: 0.0005
+
+  gat:
+    hidden_dim: 64
+    num_layers: 2
+    heads: 8
+    dropout: 0.6
+    lr: 0.005
+    weight_decay: 0.0005
+
+ablations:
+  depths: [2, 3, 4, 6]
+  edge_drop_rates: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]

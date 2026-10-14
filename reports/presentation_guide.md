@@ -78,7 +78,28 @@ Use project-level source configuration (`[tool.uv.sources]`) for packages with m
 ---
 
 ## Assignment 2: Cora Architecture Comparison
-*(To be completed in Milestone 2)*
+
+### What to say
+> "In Assignment 2, I benchmarked four distinct inductive biases on the Cora citation graph: an MLP baseline, a Graph Convolutional Network (GCN), GraphSAGE, and a Graph Attention Network (GAT). All four models were tested under identical hyperparameter budgets across three random seeds."
+
+### Key results to cite
+| Model | Test Accuracy | Macro-F1 | Train Time | Parameters |
+|-------|---------------|----------|------------|------------|
+| **GCN** | **80.60% ± 0.42%** | **0.8006** | 8.8s | 92,231 |
+| **GAT** | **80.40% ± 0.24%** | **0.7982** | 17.1s | 92,373 |
+| **GraphSAGE** | **78.83% ± 0.17%** | **0.7829** | 12.0s | 184,391 |
+| **MLP** | **57.63% ± 0.96%** | **0.5621** | 3.2s | 92,231 |
+
+### Anticipated Questions & Answers
+
+**Q: Why does GCN achieve +23% higher accuracy than MLP on Cora?**
+> "Cora's node features are 1,433-dimensional binary word vectors with 98.7% sparsity (averaging only 18 active words per paper). Text features alone suffer from extreme polysemy and document sparsity. Because Cora's citation graph has an edge homophily of 81.0%, neighboring documents strongly belong to the same topic. GCN message passing pools neighbor word distributions, smoothing out local feature noise."
+
+**Q: Why didn't GAT significantly beat GCN despite having attention mechanisms?**
+> "GAT computes dynamic self-attention coefficients $\alpha_{ij}$ between connected papers. However, on Cora, 81% of edges are already intra-class citations. Uniform degree-normalized aggregation $\hat{\mathbf{A}}$ is already near-optimal when the vast majority of neighbors share the true label. The extra parameterization and multi-head attention do not provide enough signal to offset the added variance and doubled training latency."
+
+**Q: What is over-smoothing and how did you measure it?**
+> "Over-smoothing occurs when stacking many GNN layers causes all node representations across the entire graph to converge toward a uniform stationary state. I tracked this by measuring the mean pairwise cosine similarity of node embeddings. At 2 layers, cosine similarity was 0.12 (well-separated clusters). By 6 layers, cosine similarity rose to 0.96 (almost total representation collapse), and test accuracy dropped from 80.6% down to 55.4%."
 
 ---
 

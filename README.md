@@ -85,11 +85,26 @@ jupyter notebook notebooks/01_gcn_from_scratch.ipynb
 - Permutation equivariance (a fundamental GNN correctness property)
 - GCN vs MLP vs randomized-edge ablation results
 
-### Assignment 2: Architecture Comparison on Cora *(coming in Milestone 2)*
+### Assignment 2: Architecture Comparison on Cora
+
+**Goal:** Benchmark and analyze MLP, GCN, GraphSAGE, and GAT on document classification.
 
 ```bash
+# Run complete benchmark suite, ablations, and error analysis
 python scripts/train_cora_comparison.py
+
+# Run unit tests
+pytest tests/unit/test_cora_models.py -v
+
+# Open educational notebook
+jupyter notebook notebooks/02_cora_comparison.ipynb
 ```
+
+**What it demonstrates:**
+- Graph homophily (81.0%) as a source of semi-supervised signal (+23% GNN over MLP)
+- Over-smoothing analysis: depth vs accuracy & representation cosine similarity collapse
+- Edge sparsification: gradual accuracy decay from 80.6% down to 57.1% as edges are removed
+- Diagnostic error analysis on misclassified boundary/heterophilic citations
 
 ### Assignment 3: Link Prediction *(coming in Milestone 3)*
 
@@ -155,6 +170,15 @@ python scripts/train_gcn_scratch.py --seed 42
 | GCN (original graph) | 1.0000 | 1.0000 | **100.00% ± 0.00%** | 386 |
 | MLP (features only) | 0.7917 | 0.8333 | **81.94% ± 8.56%** | 386 |
 | GCN (randomized edges) | 0.7083 | 0.7500 | **59.72% ± 11.95%** | 386 |
+
+### Assignment 2 (Cora Document Classification)
+
+| Model | Test Accuracy (Mean ± Std) | Macro-F1 (Mean ± Std) | Training Time (Mean) | Params |
+|-------|----------------------------|-----------------------|----------------------|--------|
+| **GCN** | **80.60% ± 0.42%** | **0.8006 ± 0.0031** | 8.83s | 92,231 |
+| **GAT** | **80.40% ± 0.24%** | **0.7982 ± 0.0018** | 17.14s | 92,373 |
+| **GraphSAGE** | **78.83% ± 0.17%** | **0.7829 ± 0.0018** | 11.96s | 184,391 |
+| **MLP (Baseline)** | **57.63% ± 0.96%** | **0.5621 ± 0.0087** | 3.24s | 92,231 |
 
 ---
 
