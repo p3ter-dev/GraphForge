@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  graphforge-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: graphforge-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_REGISTRY_PATH=/app/artifacts/model_registry.json
+      - PACKAGED_MODELS_DIR=/app/artifacts/packaged_models
+    volumes:
+      - ../artifacts:/app/artifacts:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

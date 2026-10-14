@@ -1,0 +1,42 @@
+{
+  "model_name": "cora_gcn",
+  "version": "1.0.0",
+  "architecture": "CoraGCN",
+  "feature_schema": {
+    "in_features": 1433,
+    "feature_type": "binary_bag_of_words",
+    "expected_shape": [
+      null,
+      1433
+    ]
+  },
+  "output_mapping": {
+    "num_classes": 7,
+    "class_names": [
+      "Theory",
+      "Reinforcement_Learning",
+      "Genetic_Algorithms",
+      "Neural_Networks",
+      "Probabilistic_Methods",
+      "Case_Based",
+      "Rule_Learning"
+    ]
+  },
+  "hyperparameters": {
+    "hidden_dim": 64,
+    "in_features": 1433,
+    "num_classes": 7
+  },
+  "metrics": {
+    "val_loss": 0.7013477683067322,
+    "val_acc": 0.7839999794960022,
+    "test_accuracy": 0.803,
+    "test_macro_f1": 0.7969519546797331,
+    "training_time_seconds": 5.077861547470093,
+    "best_epoch": 12
+  },
+  "extra_metadata": {
+    "git_commit": "55c2414",
+    "run_id": "24cf66c1c2b54a00a98928c04d6d2478"
+  }
+}

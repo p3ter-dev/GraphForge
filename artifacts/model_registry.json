@@ -1,0 +1,90 @@
+{
+  "current_champion": "1.1.0",
+  "previous_champion": "1.0.0",
+  "models": {
+    "1.0.0": {
+      "version": "1.0.0",
+      "model_name": "cora_gcn",
+      "architecture": "CoraGCN",
+      "package_dir": "artifacts/packaged_models/cora_gcn/v_1.0.0",
+      "metrics": {
+        "val_loss": 0.7013477683067322,
+        "val_acc": 0.7839999794960022,
+        "test_accuracy": 0.803,
+        "test_macro_f1": 0.7969519546797331,
+        "training_time_seconds": 5.077861547470093,
+        "best_epoch": 12
+      },
+      "status": "archived",
+      "registered_at": "2026-10-14T12:41:36.386193+00:00",
+      "git_commit": "55c2414",
+      "promotion_notes": "Promoted: Initial champion registered with val_acc=0.7840."
+    },
+    "1.1.0": {
+      "version": "1.1.0",
+      "model_name": "cora_gcn",
+      "architecture": "CoraGCN",
+      "package_dir": "artifacts/packaged_models/cora_gcn/v_1.1.0",
+      "metrics": {
+        "val_acc": 0.81
+      },
+      "status": "champion",
+      "registered_at": "2026-10-14T12:41:43.064864+00:00",
+      "git_commit": "55c2414",
+      "promotion_notes": "Promoted: val_acc improved from 0.7840 to 0.8100 (+0.0260 >= threshold 0.0000)."
+    },
+    "1.2.0": {
+      "version": "1.2.0",
+      "model_name": "cora_gcn",
+      "architecture": "CoraGCN",
+      "package_dir": "artifacts/packaged_models/cora_gcn/v_1.2.0",
+      "metrics": {
+        "val_loss": 0.6714310050010681,
+        "val_acc": 0.7940000295639038,
+        "test_accuracy": 0.815,
+        "test_macro_f1": 0.8046707969980638,
+        "training_time_seconds": 1.860598087310791,
+        "best_epoch": 6
+      },
+      "status": "archived",
+      "registered_at": "2026-10-14T12:41:43.043706+00:00",
+      "git_commit": "55c2414",
+      "promotion_notes": "Promoted: val_acc improved from 0.7840 to 0.7940 (+0.0100 >= threshold 0.0050)."
+    }
+  },
+  "history": [
+    {
+      "timestamp": "2026-10-14T12:41:36.386193+00:00",
+      "action": "initial_promotion",
+      "version": "1.0.0",
+      "score": 0.7839999794960022
+    },
+    {
+      "timestamp": "2026-10-14T12:41:41.026274+00:00",
+      "action": "blocked_regression",
+      "version": "1.1.0",
+      "score": 0.7839999794960022,
+      "champion_score": 0.7839999794960022
+    },
+    {
+      "timestamp": "2026-10-14T12:41:43.043706+00:00",
+      "action": "promoted",
+      "new_version": "1.2.0",
+      "previous_version": "1.0.0",
+      "score": 0.7940000295639038
+    },
+    {
+      "timestamp": "2026-10-14T12:41:43.063747+00:00",
+      "action": "rollback",
+      "restored_version": "1.0.0",
+      "demoted_version": "1.2.0"
+    },
+    {
+      "timestamp": "2026-10-14T12:41:43.064864+00:00",
+      "action": "promoted",
+      "new_version": "1.1.0",
+      "previous_version": "1.0.0",
+      "score": 0.81
+    }
+  ]
+}

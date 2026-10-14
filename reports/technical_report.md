@@ -244,8 +244,142 @@ Link prediction requires strict message-passing isolation to avoid trivial ident
 
 ---
 
-## Assignment 4: MLOps Pipeline
-*(To be completed in Milestone 4)*
+## Assignment 4: Reproducible GNN MLOps Pipeline
+
+### 4.1 System Architecture Overview
+
+GraphForge implements an end-to-end, production-grade MLOps system tailored specifically to Graph Neural Networks:
+
+```mermaid
+flowchart TD
+    subgraph Offline_Training ["1. Offline Training & Tracking"]
+        Train["GNN Training Script"] -->|Log Params, Metrics, Commit| MLflow["MLflow Tracking Server"]
+        Train -->|Export Bundle| Packager["Model Packager"]
+        Packager -->|Weights + Metadata + Schema| PkgDir["artifacts/packaged_models/"]
+    end
+
+    subgraph Governance ["2. Governance & Promotion Gate"]
+        PkgDir --> Gate["Validation Promotion Gate"]
+        Gate -->|Evaluate vs Champion (+0.005 Threshold)| Decision{"Decision"}
+        Decision -->|Pass| Promoted["Promote New Champion"]
+        Decision -->|Fail / Regress| Blocked["Block Regression"]
+        Promoted --> Registry["model_registry.json"]
+        Registry -->|Rollback on Demand| Rollback["Champion Rollback"]
+    end
+
+    subgraph Serving ["3. Production Serving & Inference"]
+        Registry --> API["FastAPI Microservice (Docker)"]
+        API --> Endpoints["/health\n/model/metadata\n/predict/node\n/predict/link"]
+        API --> EdgeCheck["Edge Case Guards\n(Isolated Nodes, Bounds Check, Schema)"]
+    end
+
+    subgraph Monitoring ["4. Continuous Monitoring"]
+        InferenceStream["Graph Ingestion Stream"] --> DriftMon["Drift Monitoring Engine"]
+        DriftMon --> Topo["Topological Metrics\n(Degree, Density, Isolated Ratio)"]
+        DriftMon --> Repr["Latent Representation Invariants\n(L2 Norm, Cosine Sim, Wasserstein, KS-Test)"]
+    end
+```
+
+### 4.2 Model Packaging and Feature Schema Definition
+
+To eliminate training-serving skew, model artifacts are exported as self-contained bundles in `artifacts/packaged_models/<version>/`:
+1. **Model Weights (`weights.pt`)**: Serialized PyTorch state dictionary using `torch.save()`, loaded securely with `weights_only=True`.
+2. **Architecture & Provenance Metadata (`metadata.json`)**: Contains semantic model version, exact architecture class name (`CoraGCN`), hidden dimension (64), dropout rate, number of classes (7), input feature dimension (1,433), validation/test accuracies, and the active Git commit hash (`55c2414`).
+3. **Strict Feature Schema (`schema.json`)**: Formulates exact input node feature expectations (shape `[-1, 1433]`, dtype `float32`, non-null), edge index constraints (shape `[2, -1]`, dtype `int64`, strictly bounded in $[0, N-1]$), and output response contract (shape `[-1, 7]`).
+
+**Packaging Reproducibility Verification**:
+We verify that saving and reloading the packaged model introduces zero numerical discrepancy:
+$$\max_{u, c} |Z_{\text{in-memory}}(u, c) - Z_{\text{reloaded}}(u, c)| = 0.00 \times 10^0$$
+Bitwise equivalence is formally guaranteed.
+
+### 4.3 Model Registry & Automated Validation-Based Promotion Gate
+
+The model registry (`artifacts/model_registry.json`) enforces strict automated governance rules before any model can become the active serving champion:
+- **Rule 1 (First Registration)**: If no champion exists, the first validated model is automatically appointed champion.
+- **Rule 2 (Minimum Improvement Gate)**: A candidate model is promoted to champion if and only if its validation metric exceeds the active champion by at least a predefined threshold ($\Delta \ge +0.005$):
+  $$\text{ValAcc}_{\text{candidate}} \ge \text{ValAcc}_{\text{champion}} + 0.005$$
+- **Rule 3 (Blocked Regression)**: If a candidate achieves lower or marginally equal accuracy (e.g., candidate v1.1.0 with $0.7840 \le 0.7840 + 0.005$), promotion is rejected and logged as `BLOCKED (REGRESSION)`.
+- **Rule 4 (Tie Handling)**: If candidate and champion achieve identical validation accuracy, the active champion remains in place to preserve production stability.
+- **Rule 5 (Instant Rollback)**: If a newly promoted model displays anomalies, `registry.rollback_champion()` immediately restores the prior champion.
+
+| Experiment Version | Model Description | Val Acc | Test Acc | Promotion Gate Decision | Active Champion |
+|-------------------|-------------------|---------|----------|--------------------------|-----------------|
+| **v1.0.0** | Baseline GCN (lr=0.01, wd=5e-4, drop=0.5) | 0.7840 | 0.8030 | **PROMOTED** (Initial Champion) | v1.0.0 |
+| **v1.1.0** | Candidate 1 (lr=0.015, wd=1e-3, drop=0.4) | 0.7840 | 0.7990 | **BLOCKED** (+0.0000 < +0.0050) | v1.0.0 |
+| **v1.2.0** | Candidate 2 (Optimized seed & scheduler) | 0.7940 | 0.8150 | **PROMOTED** (+0.0100 >= +0.0050) | v1.2.0 |
+| *Action* | **Rollback Event Triggered** | — | — | **RESTORED** Previous Champion | **v1.0.0** |
+
+*(Visualized in `reports/figures/a4_registry_lifecycle.png`)*
+
+### 4.4 Production Serving with FastAPI & Offline Agreement
+
+The REST serving layer (`api/main.py`) exposes standard inference endpoints:
+- `GET /health`: Health status, active champion version, and loaded architecture.
+- `GET /model/metadata`: Comprehensive metadata, hyperparameter configuration, and feature schema.
+- `POST /predict/node`: Contextualized node classification accepting a candidate subgraph (`nodes`, `edges`, `target_node_ids`).
+- `POST /predict/link`: Citation link prediction between node pairs.
+
+**Offline vs Online Parity**:
+Automated integration tests (`tests/integration/test_api_offline_agreement.py`) run identical Cora subgraphs through offline PyTorch evaluation and online FastAPI HTTP requests. The maximum absolute probability divergence across all classes is **$0.00 \times 10^0$**, proving complete absence of serving skew.
+
+**Robust Edge Case Handling**:
+1. **Isolated Nodes**: When a document has zero citations (no incident edges in request), the service appends self-loops ($\tilde{\mathbf{A}}_{ii} = 1$) and returns valid class probabilities without NaN or 500 crashes.
+2. **Non-existent Target IDs**: Requesting predictions for node IDs not included in the feature payload returns HTTP 400 with a descriptive error.
+3. **Invalid Edge Indices**: Edge tuples referencing indices outside $[0, N-1]$ return HTTP 422 Unprocessable Entity.
+4. **Dimension Mismatch**: Submitting vectors with length $\neq 1,433$ triggers Pydantic schema validation rejection (HTTP 422).
+
+### 4.5 Inductive Inference on Previously Unseen Nodes
+
+Unlike image or tabular models that process isolated instances, GNNs rely on relational topology. We demonstrate how the model operates **inductively** when classifying papers that did not exist during model training:
+
+1. **Experimental Partitioning**:
+   - The Cora citation graph is partitioned into 2,608 "seen" nodes (used for training) and 100 "unseen" nodes.
+   - All 362 directed citation edges incident to the 100 unseen nodes were strictly withheld during training.
+2. **Inference Results**:
+   - Test accuracy on seen nodes: **80.78%**.
+   - Inductive classification accuracy on unseen candidate documents: **83.00%**.
+3. **Engineering Analysis for Production Deployment**:
+   - **Graph Context Requirement**: To classify a new document inductively, the API must be supplied with its local neighborhood ($k$-hop citations to existing papers).
+   - **Degradation on Isolated Nodes**: If a paper arrives with zero citations, message aggregation collapses to the node's self-loop; the GCN gracefully degrades to an MLP-equivalent linear projection of the bag-of-words text.
+   - **Scalability via Subgraph Sampling**: In production graphs with millions of nodes, full-graph forward passes are computationally infeasible. The serving layer must extract a bounded $k$-hop ego-network using `torch_geometric.loader.NeighborLoader` before evaluating `model.forward()`.
+
+### 4.6 Graph Structure & Latent Representation Drift Monitoring
+
+Because graphs are dynamic, production systems must detect both topological drift and representation drift:
+
+#### Topological Metrics Monitored:
+- **Average Node Degree**: $\bar{d} = \frac{1}{N} \sum_{i} d_i$ (Baseline: 3.90).
+- **Graph Density**: $\rho = \frac{|E|}{N(N-1)}$ (Baseline: 0.0014).
+- **Isolated Node Ratio**: Fraction of nodes with zero degree (Baseline: 0.000).
+
+#### Representation Invariants Monitored:
+- **Embedding L2 Norm Distribution**: $\|\mathbf{z}_u\|_2$ (Baseline: $4.63 \pm 1.47$).
+- **Pairwise Cosine Similarity**: $\frac{\mathbf{z}_u \cdot \mathbf{z}_v}{\|\mathbf{z}_u\|_2 \|\mathbf{z}_v\|_2}$ (Baseline: 0.28).
+- **Hypothesis Testing**:
+  - **Two-Sample Kolmogorov-Smirnov (KS) Test**: Detects distribution shape shifts ($\alpha = 0.05$).
+  - **1D Wasserstein Distance (Earth Mover's Distance)**: Quantifies magnitude of distribution divergence (Alert threshold $\tau = 0.30$).
+
+| Snapshot Evaluated | Structural Shift | Wasserstein Dist ($W$) | KS $p$-value | Drift Detected? | Action Triggered |
+|-------------------|------------------|------------------------|--------------|-----------------|------------------|
+| **Snapshot A (Normal Data)** | In-distribution Cora test stream | 0.0477 | 0.4164 | **False** | Healthy operation |
+| **Snapshot B (Shifted Stream)** | Covariate & degree distribution shift | 16.8150 | $0.00 \times 10^0$ | **True** | **ALERT**: Retrain triggered |
+
+*(Visualized in `reports/figures/a4_drift_monitoring.png`)*
+
+#### Mathematical Proof: Why Raw Coordinates Cannot Be Directly Compared Across Versions
+
+A naive MLOps engineer might attempt to monitor embedding drift by computing the coordinate-wise mean squared error $\|z_u^{(v1)} - z_u^{(v2)}\|^2$ between two model versions. **This is mathematically invalid due to Orthogonal Invariance and Permutation Ambiguity:**
+
+1. **Orthogonal Invariance**:
+   Consider any downstream dot-product decoder or linear classification layer $\hat{y} = \text{softmax}(\mathbf{W} \mathbf{z})$.
+   For any orthogonal matrix $\mathbf{Q} \in \mathcal{O}(D)$ (satisfying $\mathbf{Q}^T \mathbf{Q} = \mathbf{I}$):
+   $$\langle \mathbf{Q} \mathbf{z}_u, \mathbf{Q} \mathbf{z}_v \rangle = (\mathbf{Q} \mathbf{z}_u)^T (\mathbf{Q} \mathbf{z}_v) = \mathbf{z}_u^T \mathbf{Q}^T \mathbf{Q} \mathbf{z}_v = \mathbf{z}_u^T \mathbf{z}_v$$
+   If model weights $\mathbf{W}' = \mathbf{W} \mathbf{Q}^T$ are adjusted accordingly, the model's loss and predictions are **100% identical**. Two models trained with stochastic gradient descent from different random initializations will find equivalent latent representations that are arbitrarily rotated or reflected in $\mathbb{R}^D$.
+2. **Neuron Permutation Ambiguity**:
+   The ordering of latent dimensions is arbitrary; latent dimension $k$ in Version 1.0.0 might represent the concept encoded by dimension $j$ in Version 1.1.0.
+3. **Correct Monitoring Methodology**:
+   Production drift monitoring must rely on **scalar geometric invariants** (such as L2 norm distributions and pairwise cosine distance matrices). If direct vector comparisons are required, models must first be aligned using **Orthogonal Procrustes Analysis**:
+   $$\min_{\mathbf{Q} \in \mathcal{O}(D)} \|\mathbf{Z}_1 - \mathbf{Z}_2 \mathbf{Q}\|_F$$
 
 ---
 

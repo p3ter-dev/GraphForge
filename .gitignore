@@ -50,10 +50,11 @@ coverage.xml
 htmlcov/
 .pytest_cache/
 
-# Reports (only auto-generated outputs)
+# Reports (only auto-generated outputs & private guides)
 reports/figures/*.png
 reports/figures/*.svg
 reports/tables/*.csv
+reports/presentation_guide.md
 
 # Docker
 docker/.env

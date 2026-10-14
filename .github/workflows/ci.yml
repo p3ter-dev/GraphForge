@@ -1,4 +1,4 @@
-name: CI — Tests
+name: CI — Tests & MLOps Pipeline
 
 on:
   push:
@@ -34,17 +34,24 @@ jobs:
             --extra-index-url https://pypi.org/simple
 
       - name: Lint with ruff
-        run: uv run ruff check src/ tests/ scripts/ --output-format=github
+        run: uv run ruff check src/ tests/ scripts/ api/ --output-format=github
 
       - name: Run unit tests
         run: uv run pytest tests/unit/ -v --tb=short
 
-      - name: Run correctness tests
+      - name: Run correctness tests (A1 Permutation Equivariance & Manual Hand-Calculations)
         run: uv run pytest tests/correctness/ -v --tb=short
 
-      - name: Run leakage tests (Assignment 3, skipped until M3)
+      - name: Run leakage tests (A3 Message Passing Split Disjointness & Symmetric Decoder)
+        run: uv run pytest tests/leakage/ -v --tb=short
+
+      - name: Run integration tests (A4 API Offline Agreement & Edge Cases)
+        run: uv run pytest tests/integration/ -v --tb=short
+
+      - name: Run MLOps pipeline end-to-end verification
         run: |
-          uv run pytest tests/leakage/ -v --tb=short --ignore-glob="*test_link*" || true
+          uv run python scripts/train_mlflow_pipeline.py
+          uv run python scripts/demonstrate_inductive_inference.py
 
       - name: Upload coverage report
         if: always()

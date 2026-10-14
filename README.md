@@ -128,21 +128,43 @@ jupyter notebook notebooks/03_link_prediction.ipynb
 - Deliberately leaky evaluation exposing artificial metric inflation (94.17% ROC-AUC)
 - Top 10 candidate citation discoveries under the Open-World Assumption
 
-### Assignment 4: MLOps Pipeline *(coming in Milestone 4)*
+### Assignment 4: Reproducible GNN MLOps Pipeline
+
+**Goal:** Build a production-grade, reproducible MLOps pipeline for GNNs: MLflow tracking, self-contained model packaging, automated registry with promotion gates & rollback, inductive inference on unseen nodes, FastAPI serving, and drift detection.
 
 ```bash
-# Start MLflow UI
-mlflow ui --port 5000
+# Run end-to-end MLOps pipeline:
+# 1. Trains 3 tracked models in MLflow
+# 2. Packages models with schema & metadata
+# 3. Evaluates promotion gate (+0.005 gain) and blocks regressions
+# 4. Demonstrates champion rollback
+# 5. Verifies packaging reproducibility (0.00 divergence)
+# 6. Demonstrates graph topology & embedding drift monitoring
+python scripts/train_mlflow_pipeline.py
 
-# Train with tracking
-python scripts/train_gcn_scratch.py  # tracked version in M4
+# Run inductive inference demonstration on withheld nodes
+python scripts/demonstrate_inductive_inference.py
 
-# Start API
-uvicorn api.main:app --reload
+# Run MLOps unit and integration tests (registry, packaging, drift, offline agreement)
+pytest tests/unit/test_mlops.py tests/integration/test_api_offline_agreement.py -v
 
-# Docker
-docker compose -f docker/docker-compose.yml up
+# Start FastAPI serving locally
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+# Run containerized service with Docker Compose
+docker compose -f docker/docker-compose.yml up --build
+
+# Open educational notebook
+jupyter notebook notebooks/04_mlops_pipeline.ipynb
 ```
+
+**What it demonstrates:**
+- Zero training-serving skew: package weights, architecture hyperparameters, and strict feature schemas (`0.00` divergence)
+- Automated governance: validation-based promotion gate blocking regressions with atomic rollback
+- Inductive inference: withhold 100 nodes & 362 edges during training, achieving 83.00% accuracy on new candidate documents
+- Robust REST serving: `/health`, `/model/metadata`, `/predict/node`, `/predict/link` with isolated-node guards and schema validation
+- Graph drift detection: degree/density tracking, Wasserstein distance, and Kolmogorov-Smirnov hypothesis testing on embedding representations
+- Invariance proof: why raw embedding coordinates cannot be compared across model versions due to orthogonal rotation ($Q \in \mathcal{O}(D)$) and neuron permutation ambiguity
 
 ---
 
