@@ -28,12 +28,12 @@ Z  = softmax( Â · H¹ · W¹ )         (layer 1)
 ### Permutation equivariance — why it matters
 > "A GNN must not depend on the arbitrary numbering of nodes. I verified this by permuting all 120 nodes simultaneously — reordering features, adjacency rows+columns, and labels — and confirmed the model's predictions permuted identically."
 
-### Experimental results to cite (fill in after running)
-| Model | Test Accuracy |
-|-------|--------------|
-| GCN (original graph) | TBD |
-| MLP (features only) | TBD |
-| GCN (randomized edges) | TBD |
+### Experimental results to cite
+| Model | Test Accuracy (Seed 42) | Multi-seed (Mean ± Std) |
+|-------|-------------------------|-------------------------|
+| GCN (original graph) | 100.00% | **100.00% ± 0.00%** |
+| MLP (features only) | 83.33% | **81.94% ± 8.56%** |
+| GCN (randomized edges) | 75.00% | **59.72% ± 11.95%** |
 
 ### Anticipated questions
 **Q: Why does symmetric normalization work better than row normalization?**

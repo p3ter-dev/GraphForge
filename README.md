@@ -150,13 +150,11 @@ python scripts/train_gcn_scratch.py --seed 42
 
 ### Assignment 1 (Synthetic Two-Community Graph)
 
-| Model | Val Acc | Test Acc | Params |
-|-------|---------|----------|--------|
-| GCN (original graph) | — | — | — |
-| MLP (features only) | — | — | — |
-| GCN (randomized edges) | — | — | — |
-
-*Results will be filled after running `python scripts/train_gcn_scratch.py`.*
+| Model | Val Acc | Test Acc | Multi-seed (Mean ± Std) | Params |
+|-------|---------|----------|-------------------------|--------|
+| GCN (original graph) | 1.0000 | 1.0000 | **100.00% ± 0.00%** | 386 |
+| MLP (features only) | 0.7917 | 0.8333 | **81.94% ± 8.56%** | 386 |
+| GCN (randomized edges) | 0.7083 | 0.7500 | **59.72% ± 11.95%** | 386 |
 
 ---
 

@@ -147,8 +147,19 @@ class TestTrainingLoop:
         )
 
     def test_reproducibility_same_seed(self, tiny_data, tiny_norm_adj):
-        """Same seed → identical training trajectories."""
+        """
+        Same seed → identical training trajectories.
+
+        Critical: set_seed() MUST be called before model creation, not just
+        inside train(). Model weight initialization (nn.Linear uses Kaiming
+        uniform by default) consumes random numbers, so we must seed before
+        constructing the model to get reproducible initial weights.
+        """
+        from graphforge.training.trainer import set_seed
+
         def run(seed):
+            # Seed before model creation so weight init is reproducible
+            set_seed(seed)
             model = TwoLayerGCN(in_features=3, hidden_dim=8, n_classes=2, dropout=0.0)
             cfg = TrainingConfig(n_epochs=30, patience=30, seed=seed, hidden_dim=8, dropout=0.0)
             _, hist = train(
@@ -161,7 +172,10 @@ class TestTrainingLoop:
         losses_b = run(seed=123)
 
         for i, (la, lb) in enumerate(zip(losses_a, losses_b)):
-            assert abs(la - lb) < 1e-6, f"Loss diverged at epoch {i}: {la} vs {lb}"
+            assert abs(la - lb) < 1e-6, (
+                f"Loss diverged at epoch {i}: {la} vs {lb}\n"
+                "Ensure set_seed() is called before model creation."
+            )
 
 
 class TestAccuracyFunction:

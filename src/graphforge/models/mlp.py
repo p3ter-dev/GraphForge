@@ -64,3 +64,18 @@ class MLP(nn.Module):
         h = F.dropout(h, p=self.dropout, training=self.training)
         out = self.fc2(h)                                       # [N, n_classes]
         return F.log_softmax(out, dim=1)
+
+    def get_embeddings(self, x: Tensor, norm_adj: Tensor | None = None) -> Tensor:
+        """
+        Return the hidden-layer representations (useful for visualization).
+        Sets eval mode internally for this call.
+
+        Returns
+        -------
+        Tensor [N, hidden_dim]
+        """
+        self.eval()
+        with torch.no_grad():
+            h = self.fc1(x)
+            h = F.relu(h)
+        return h

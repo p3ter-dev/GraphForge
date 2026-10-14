@@ -237,13 +237,15 @@ def main():
             })
     print(f"\n  Results saved to: {csv_path}")
 
-    # ── Save training curves ──────────────────────────────────────────────────
+    # ── Save training curves and embedding visualizations ────────────────────
     try:
         import matplotlib.pyplot as plt
         import matplotlib
+        from sklearn.decomposition import PCA
 
         matplotlib.use("Agg")  # headless rendering
 
+        # 1. Training curves
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         colors = ["#2E86AB", "#E84855", "#A23B72"]
         results = [result_gcn, result_mlp, result_rand]
@@ -271,8 +273,100 @@ def main():
         plt.close()
         print(f"  Training curves saved to: {fig_path}")
 
-    except ImportError:
-        print("  matplotlib not available — skipping plots.")
+        # 2. Embedding space visualization (PCA 2D)
+        gcn_emb = result_gcn["model"].get_embeddings(data["x"], norm_adj_orig).detach().numpy()
+        mlp_emb = result_mlp["model"].get_embeddings(data["x"]).detach().numpy()
+        raw_x = data["x"].detach().numpy()
+        y_np = data["y"].detach().numpy()
+
+        pca_raw = PCA(n_components=2).fit_transform(raw_x)
+        pca_mlp = PCA(n_components=2).fit_transform(mlp_emb)
+        pca_gcn = PCA(n_components=2).fit_transform(gcn_emb)
+
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
+        c_map = ["#2E86AB", "#E84855"]
+
+        for c in [0, 1]:
+            mask = y_np == c
+            axes[0].scatter(pca_raw[mask, 0], pca_raw[mask, 1], c=c_map[c], label=f"Class {c}", alpha=0.7, edgecolors="none")
+            axes[1].scatter(pca_mlp[mask, 0], pca_mlp[mask, 1], c=c_map[c], label=f"Class {c}", alpha=0.7, edgecolors="none")
+            axes[2].scatter(pca_gcn[mask, 0], pca_gcn[mask, 1], c=c_map[c], label=f"Class {c}", alpha=0.7, edgecolors="none")
+
+        axes[0].set_title("Raw Input Features (PCA 2D)")
+        axes[0].set_xlabel("PC1")
+        axes[0].set_ylabel("PC2")
+        axes[0].legend()
+        axes[0].grid(alpha=0.3)
+
+        axes[1].set_title("MLP Latent Space (PCA 2D)")
+        axes[1].set_xlabel("PC1")
+        axes[1].set_ylabel("PC2")
+        axes[1].legend()
+        axes[1].grid(alpha=0.3)
+
+        axes[2].set_title("GCN Latent Space (PCA 2D)\nClear Cluster Separation")
+        axes[2].set_xlabel("PC1")
+        axes[2].set_ylabel("PC2")
+        axes[2].legend()
+        axes[2].grid(alpha=0.3)
+
+        plt.suptitle("Latent Representation Comparison: Raw Features vs MLP vs GCN", fontsize=14, y=1.03)
+        plt.tight_layout()
+        emb_fig_path = fig_dir / "a1_embeddings.png"
+        plt.savefig(emb_fig_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"  Embedding visualization saved to: {emb_fig_path}")
+
+    except Exception as e:
+        print(f"  Plotting error ({e}) — skipping plots.")
+
+    # ── Multi-seed evaluation (seeds: 42, 123, 999) ───────────────────────────
+    print("\n[3/4] Running multi-seed robustness evaluation (seeds: 42, 123, 999)...")
+    seeds = [42, 123, 999]
+    multi_results = {"GCN": [], "MLP": [], "GCN_rand": []}
+
+    for s in seeds:
+        d = make_two_community_graph(n_nodes=N, seed=s)
+        n_adj_o = preprocess_adjacency(d["adj"])
+        n_adj_r = preprocess_adjacency(make_randomized_adjacency(d["adj"], seed=s + 100))
+        c = TrainingConfig(lr=args.lr, weight_decay=5e-4, n_epochs=args.n_epochs, patience=50, seed=s, hidden_dim=H, dropout=args.dropout)
+
+        m_gcn = TwoLayerGCN(n_features, H, n_classes, dropout=args.dropout)
+        res_g = run_experiment(m_gcn, d, c, n_adj_o, f"GCN (seed {s})")
+        multi_results["GCN"].append(res_g["test_acc"])
+
+        m_mlp = MLP(n_features, H, n_classes, dropout=args.dropout)
+        res_m = run_experiment(m_mlp, d, c, n_adj_o, f"MLP (seed {s})")
+        multi_results["MLP"].append(res_m["test_acc"])
+
+        m_rand = TwoLayerGCN(n_features, H, n_classes, dropout=args.dropout)
+        res_r = run_experiment(m_rand, d, c, n_adj_r, f"GCN rand (seed {s})")
+        multi_results["GCN_rand"].append(res_r["test_acc"])
+
+    print("\n" + "=" * 60)
+    print("  MULTI-SEED EVALUATION SUMMARY (Mean ± Std)")
+    print("=" * 60)
+    for model_name, accs in multi_results.items():
+        mean_acc = np.mean(accs)
+        std_acc = np.std(accs)
+        print(f"  {model_name:<15}: {mean_acc * 100:.2f}% ± {std_acc * 100:.2f}% (seeds: {[round(a, 4) for a in accs]})")
+    print("=" * 60)
+
+    # Save multi-seed CSV
+    multi_csv_path = tab_dir / "a1_multi_seed_results.csv"
+    with open(multi_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["model", "seed_42", "seed_123", "seed_999", "mean", "std"])
+        for model_name, accs in multi_results.items():
+            writer.writerow([
+                model_name,
+                f"{accs[0]:.4f}",
+                f"{accs[1]:.4f}",
+                f"{accs[2]:.4f}",
+                f"{np.mean(accs):.4f}",
+                f"{np.std(accs):.4f}",
+            ])
+    print(f"  Multi-seed results saved to: {multi_csv_path}")
 
     print("\n[Done] Assignment 1 training script complete.")
 
