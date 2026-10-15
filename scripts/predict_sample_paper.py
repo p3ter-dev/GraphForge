@@ -8,14 +8,15 @@ Queries the running FastAPI / Docker container (or falls back to the packaged ch
 from __future__ import annotations
 
 import json
-import urllib.request
 import sys
+import urllib.request
 from pathlib import Path
+
 import torch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from graphforge.data.cora import load_cora_dataset, CORA_CLASSES
+from graphforge.data.cora import CORA_CLASSES, load_cora_dataset
 from graphforge.serving.packaging import load_packaged_model
 from graphforge.serving.registry import ModelRegistry
 
@@ -47,7 +48,7 @@ def predict_paper_topic(target_node: int = 0):
     citing_target = data.edge_index[0][data.edge_index[1] == target_node].tolist()
     neighbors = sorted(list(set(cited_by_target + citing_target)))
 
-    print(f"\n  [Paper Metadata]")
+    print("\n  [Paper Metadata]")
     print(f"    • Paper ID           : #{target_node}")
     print(f"    • Active Dictionary Words : {active_words} words (out of 1,433 vocabulary)")
     print(f"    • Connected Citation Papers: {len(neighbors)} papers ({neighbors})")
@@ -59,9 +60,14 @@ def predict_paper_topic(target_node: int = 0):
 
     # Subgraph features and edge index
     x_sub = [data.x[nid].tolist() for nid in subgraph_nodes]
-    
+
     # Filter edges belonging strictly to this ego-network
-    edge_mask = torch.tensor([(s in node_to_idx and d in node_to_idx) for s, d in zip(data.edge_index[0].tolist(), data.edge_index[1].tolist())])
+    edge_mask = torch.tensor(
+        [
+            (s in node_to_idx and d in node_to_idx)
+            for s, d in zip(data.edge_index[0].tolist(), data.edge_index[1].tolist())
+        ]
+    )
     sub_src = [node_to_idx[s] for s in data.edge_index[0][edge_mask].tolist()]
     sub_dst = [node_to_idx[d] for d in data.edge_index[1][edge_mask].tolist()]
 
@@ -75,7 +81,7 @@ def predict_paper_topic(target_node: int = 0):
         "target_node_ids": [target_idx],
     }
 
-    print(f"\n  Sending request to deployed GNN inference service...")
+    print("\n  Sending request to deployed GNN inference service...")
     try:
         req = urllib.request.Request(
             url,
@@ -96,12 +102,20 @@ def predict_paper_topic(target_node: int = 0):
         # Fallback to local champion package
         reg = ModelRegistry(registry_file=Path("artifacts/model_registry.json"))
         champ = reg.get_champion()
-        pkg_dir = Path(champ["package_dir"]) if champ else Path("artifacts/packaged_models/cora_gcn/v_1.0.0")
+        pkg_dir = (
+            Path(champ["package_dir"])
+            if champ
+            else Path("artifacts/packaged_models/cora_gcn/v_1.0.0")
+        )
         model, meta = load_packaged_model(pkg_dir)
         model.eval()
         with torch.no_grad():
             x_t = torch.tensor(x_sub, dtype=torch.float32)
-            e_t = torch.tensor([sub_src, sub_dst], dtype=torch.long) if len(sub_src) > 0 else torch.zeros((2, 0), dtype=torch.long)
+            e_t = (
+                torch.tensor([sub_src, sub_dst], dtype=torch.long)
+                if len(sub_src) > 0
+                else torch.zeros((2, 0), dtype=torch.long)
+            )
             out = model(x_t, e_t)
             probs = torch.exp(out[target_idx]).cpu().tolist()
             pred_class_id = int(torch.tensor(probs).argmax().item())
@@ -110,7 +124,7 @@ def predict_paper_topic(target_node: int = 0):
             source = f"Packaged Champion Artifact ({meta['architecture']} v{meta['version']})"
 
     prob_dict = {CORA_CLASSES[i]: probs[i] for i in range(len(CORA_CLASSES))}
-    is_correct = (pred_label == true_label)
+    is_correct = pred_label == true_label
 
     # 3. Output results
     print(f"\n  [Inference Response] — Served by {source}")
@@ -119,7 +133,10 @@ def predict_paper_topic(target_node: int = 0):
 
     print_probability_bars(prob_dict)
 
-    print(f"\n  Conclusion: GNN successfully classified Paper #{target_node} as '{pred_label}' ({confidence*100:.1f}% confidence).")
+    print(
+        f"\n  Conclusion: GNN successfully classified Paper #{target_node}"
+        f" as '{pred_label}' ({confidence*100:.1f}% confidence)."
+    )
     print("=" * 68)
 
 
