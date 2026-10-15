@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch import Tensor
 
 try:
-    from sklearn.metrics import f1_score, classification_report
+    from sklearn.metrics import f1_score
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False

@@ -5,16 +5,15 @@ Unit Tests for Cora GNN Models and Preprocessing
 
 import pytest
 import torch
-import torch.nn.functional as F
 
+from graphforge.data.cora import compute_graph_homophily
 from graphforge.models.cora_models import (
-    CoraMLP,
+    CoraGAT,
     CoraGCN,
     CoraGraphSAGE,
-    CoraGAT,
+    CoraMLP,
     compute_mean_pairwise_cosine_similarity,
 )
-from graphforge.data.cora import compute_graph_homophily
 
 
 @pytest.fixture
@@ -25,7 +24,7 @@ def tiny_graph():
     F_in = 100
     C = 7
     x = torch.randn(N, F_in)
-    
+
     # Random undirected edges
     src = torch.randint(0, N, (120,))
     dst = torch.randint(0, N, (120,))
@@ -78,7 +77,7 @@ class TestCoraModelArchitectures:
         with torch.no_grad():
             out_with_edges = model(x, edge_index)
             out_without_edges = model(x, None)
-            
+
             # Scrambled edges
             scrambled = torch.randint(0, x.shape[0], edge_index.shape)
             out_scrambled = model(x, scrambled)

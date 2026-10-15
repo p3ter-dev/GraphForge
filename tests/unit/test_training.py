@@ -7,7 +7,6 @@ import torch
 
 from graphforge.data.synthetic import make_two_community_graph
 from graphforge.models.gcn_scratch import TwoLayerGCN, preprocess_adjacency
-from graphforge.models.mlp import MLP
 from graphforge.training.trainer import TrainingConfig, accuracy, evaluate, train
 
 

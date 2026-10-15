@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Any, Tuple, Optional
+from typing import Any, Dict, Tuple
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn.metrics import f1_score, confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, f1_score
 
 
 @dataclass

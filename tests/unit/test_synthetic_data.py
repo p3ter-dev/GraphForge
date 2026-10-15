@@ -2,8 +2,6 @@
 Unit Tests: Synthetic Graph Generation
 """
 
-import numpy as np
-import pytest
 import torch
 
 from graphforge.data.synthetic import make_two_community_graph

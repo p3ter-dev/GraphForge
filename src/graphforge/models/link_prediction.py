@@ -16,7 +16,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. GNN Node Encoder
 # ─────────────────────────────────────────────────────────────────────────────
@@ -118,11 +117,6 @@ def compute_common_neighbors_score(
     Computed STRICTLY on the training message-passing graph using
     sparse adjacency matrix multiplication: (A_train^2)[u, v].
     """
-    # Build sparse binary adjacency for training graph
-    indices = train_message_edge_index
-    values = torch.ones(indices.shape[1], dtype=torch.float32)
-    adj_train = torch.sparse_coo_tensor(indices, values, (num_nodes, num_nodes)).coalesce()
-
     # Pre-build neighbor adjacency lists for fast exact set intersection
     src, dst = train_message_edge_index[0].cpu().numpy(), train_message_edge_index[1].cpu().numpy()
     nbr_sets = [set() for _ in range(num_nodes)]

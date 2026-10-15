@@ -6,11 +6,10 @@ Production-grade GNN inference service for Node Classification and Link Predicti
 
 from __future__ import annotations
 
-import os
 import sys
 import time
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Tuple
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -20,10 +19,8 @@ import torch.nn.functional as F
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
-from graphforge.serving.registry import ModelRegistry
 from graphforge.serving.packaging import load_packaged_model
-from graphforge.data.cora import CORA_CLASSES
-
+from graphforge.serving.registry import ModelRegistry
 
 app = FastAPI(
     title="GraphForge GNN Model Service",

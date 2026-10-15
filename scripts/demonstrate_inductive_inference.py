@@ -11,14 +11,15 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import torch
 import torch.nn.functional as F
 
-from graphforge.data.cora import load_cora_dataset, CORA_CLASSES
+from graphforge.data.cora import CORA_CLASSES, load_cora_dataset
 from graphforge.models.cora_models import CoraGCN
-from graphforge.training.cora_trainer import CoraTrainingConfig, train_cora_model, set_seed
+from graphforge.training.cora_trainer import CoraTrainingConfig, set_seed, train_cora_model
 
 
 def main():
@@ -34,7 +35,7 @@ def main():
     num_unseen = 100
     num_train_nodes = total_nodes - num_unseen  # 2608
 
-    print(f"\n[1/4] Partitioning Graph:")
+    print("\n[1/4] Partitioning Graph:")
     print(f"  Training Graph Nodes (Seen)   : [0, {num_train_nodes - 1}] ({num_train_nodes} nodes)")
     print(f"  Unseen Nodes (Post-training) : [{num_train_nodes}, {total_nodes - 1}] ({num_unseen} nodes)")
 
@@ -56,7 +57,7 @@ def main():
     print(f"  Incident Edges Withheld During Train  : {data.num_edges - train_edge_index.shape[1]}")
 
     # 3. Train Model on Seen Graph Only
-    print(f"\n[2/4] Training GCN on Seen Nodes Only...")
+    print("\n[2/4] Training GCN on Seen Nodes Only...")
     cfg = CoraTrainingConfig(lr=0.01, max_epochs=120, patience=30, seed=42, hidden_dim=64)
     model = CoraGCN(in_features=data.num_features, hidden_dim=64, num_classes=7, dropout=0.5)
     model, _ = train_cora_model(model, train_x, train_edge_index, train_y, train_mask, val_mask, cfg)
@@ -71,12 +72,12 @@ def main():
         test_mask_seen = data.test_mask[:num_train_nodes]
         acc_seen = (preds_seen[test_mask_seen] == train_y[test_mask_seen]).float().mean().item()
 
-    print(f"\n[3/4] Inference on Existing (Seen) Nodes:")
+    print("\n[3/4] Inference on Existing (Seen) Nodes:")
     print(f"  Test Accuracy on Seen Nodes: {acc_seen * 100:.2f}%")
 
     # 5. Inductive Inference on Previously Unseen Nodes
     # We now present the unseen nodes along with their local citation context (edges to seen nodes)
-    print(f"\n[4/4] Inductive Inference on Previously Unseen Nodes:")
+    print("\n[4/4] Inductive Inference on Previously Unseen Nodes:")
     with torch.no_grad():
         # Full graph includes all nodes and all connections
         out_full = model(data.x, data.edge_index)

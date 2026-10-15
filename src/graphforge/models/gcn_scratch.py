@@ -36,7 +36,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Graph pre-processing utilities
 # ─────────────────────────────────────────────────────────────────────────────

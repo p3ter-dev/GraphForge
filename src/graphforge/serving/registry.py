@@ -14,9 +14,9 @@ Features:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 
 @dataclass

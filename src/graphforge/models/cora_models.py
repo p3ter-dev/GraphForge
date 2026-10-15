@@ -15,12 +15,12 @@ All models adhere to a unified interface:
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import GCNConv, SAGEConv, GATConv
-
+from torch_geometric.nn import GATConv, GCNConv, SAGEConv
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Multi-Layer Perceptron (MLP Baseline)
@@ -207,7 +207,7 @@ class CoraGAT(nn.Module):
             # First layer uses multi-head attention; output dim is hidden_dim // heads per head
             head_dim = max(1, hidden_dim // heads)
             self.convs.append(GATConv(in_features, head_dim, heads=heads, concat=True, dropout=dropout))
-            
+
             # Intermediate layers (if depth > 2)
             current_dim = head_dim * heads
             for _ in range(num_layers - 2):

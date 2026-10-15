@@ -12,8 +12,8 @@ Monitors:
 
 from __future__ import annotations
 
-from typing import Dict, Any, Tuple
-import numpy as np
+from typing import Any, Dict
+
 import torch
 import torch.nn.functional as F
 from scipy.stats import ks_2samp, wasserstein_distance
@@ -56,7 +56,7 @@ def compute_embedding_distribution_metrics(embeddings: torch.Tensor) -> Dict[str
     """
     # L2 norms
     norms = torch.norm(embeddings, p=2, dim=-1).cpu().numpy()
-    
+
     # Mean pairwise cosine similarity
     normed = F.normalize(embeddings, p=2, dim=-1)
     # Subsample if large for efficiency

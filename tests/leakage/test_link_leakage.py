@@ -9,12 +9,10 @@ are strictly absent from the message-passing graph.
 import pytest
 import torch
 
-from graphforge.data.link_split import create_link_prediction_splits, get_unique_undirected_edges
+from graphforge.data.link_split import create_link_prediction_splits
 from graphforge.models.link_prediction import (
-    GNNEncoder,
     DotProductDecoder,
     SymmetricMLPDecoder,
-    LinkPredictor,
 )
 
 

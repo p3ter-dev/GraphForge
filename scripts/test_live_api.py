@@ -5,13 +5,13 @@ Tests all live endpoints on the running GraphForge container (or local server).
 """
 
 import json
-import urllib.request
 import sys
+import urllib.request
 from pathlib import Path
 
 # Add src to load sample data
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-from graphforge.data.cora import load_cora_dataset, CORA_CLASSES
+from graphforge.data.cora import load_cora_dataset
 
 BASE_URL = "http://localhost:8000"
 

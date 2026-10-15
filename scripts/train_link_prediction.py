@@ -21,26 +21,31 @@ import argparse
 import csv
 import sys
 from pathlib import Path
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+import matplotlib
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_auc_score, average_precision_score, roc_curve, precision_recall_curve
+from sklearn.metrics import (
+    average_precision_score,
+    precision_recall_curve,
+    roc_auc_score,
+    roc_curve,
+)
 
 from graphforge.data.cora import load_cora_dataset
-from graphforge.data.link_split import create_link_prediction_splits, LinkDataSplits
+from graphforge.data.link_split import LinkDataSplits, create_link_prediction_splits
 from graphforge.models.link_prediction import (
-    GNNEncoder,
     DotProductDecoder,
-    SymmetricMLPDecoder,
+    GNNEncoder,
     LinkPredictor,
+    SymmetricMLPDecoder,
     compute_common_neighbors_score,
 )
 

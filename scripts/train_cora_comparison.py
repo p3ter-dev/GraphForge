@@ -24,33 +24,37 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
-import os
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+import matplotlib
 import numpy as np
 import torch
-import torch.nn.functional as F
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
-from graphforge.data.cora import load_cora_dataset, get_cora_statistics, print_cora_summary, CORA_CLASSES
+from graphforge.data.cora import (
+    CORA_CLASSES,
+    get_cora_statistics,
+    load_cora_dataset,
+    print_cora_summary,
+)
 from graphforge.models.cora_models import (
-    CoraMLP,
+    CoraGAT,
     CoraGCN,
     CoraGraphSAGE,
-    CoraGAT,
+    CoraMLP,
     compute_mean_pairwise_cosine_similarity,
 )
 from graphforge.training.cora_trainer import (
     CoraTrainingConfig,
-    train_cora_model,
     evaluate_cora_model,
     set_seed,
+    train_cora_model,
 )
 
 
@@ -199,7 +203,7 @@ def main():
     fig, axes = plt.subplots(1, 4, figsize=(18, 4))
     for idx, name in enumerate(model_names):
         cm = champion_evals[name]["confusion_matrix"]
-        im = axes[idx].imshow(cm, cmap="Blues", interpolation="nearest")
+        axes[idx].imshow(cm, cmap="Blues", interpolation="nearest")
         axes[idx].set_title(f"{name} (Acc: {champion_evals[name]['accuracy']*100:.1f}%)", fontsize=11)
         axes[idx].set_xlabel("Predicted")
         if idx == 0:
@@ -303,12 +307,12 @@ def main():
     for node_id in incorrect_test_node_ids[:6]:
         true_c = int(labels[node_id])
         pred_c = int(gcn_preds[np.where(test_indices == node_id)[0][0]])
-        
+
         # Find neighbors
         neighbor_mask = (src == node_id)
         nbrs = dst[neighbor_mask]
         degree = len(nbrs)
-        
+
         if degree > 0:
             nbr_labels = labels[nbrs]
             homophily = float((nbr_labels == true_c).mean())
@@ -371,7 +375,7 @@ def main():
         tsne = TSNE(n_components=2, random_state=42, perplexity=30)
         emb_2d = tsne.fit_transform(emb)
 
-        scatter = axes[idx].scatter(emb_2d[:, 0], emb_2d[:, 1], c=y_test, cmap=cora_cmap, alpha=0.75, s=25)
+        axes[idx].scatter(emb_2d[:, 0], emb_2d[:, 1], c=y_test, cmap=cora_cmap, alpha=0.75, s=25)
         axes[idx].set_title(f"{name} Latent Space (t-SNE)", fontsize=11)
         axes[idx].axis("off")
 

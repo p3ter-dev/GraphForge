@@ -2,16 +2,13 @@
 Unit Tests: GCN Model Architecture
 """
 
-import pytest
 import torch
 
 from graphforge.models.gcn_scratch import (
     GCNLayerScratch,
     TwoLayerGCN,
     add_self_loops,
-    compute_degree,
     preprocess_adjacency,
-    symmetric_normalize,
 )
 from graphforge.models.mlp import MLP
 

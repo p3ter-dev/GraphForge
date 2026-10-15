@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -34,7 +33,7 @@ import torch.nn as nn
 from graphforge.data.synthetic import make_two_community_graph, print_graph_summary
 from graphforge.models.gcn_scratch import TwoLayerGCN, preprocess_adjacency
 from graphforge.models.mlp import MLP
-from graphforge.training.trainer import TrainingConfig, train, evaluate
+from graphforge.training.trainer import TrainingConfig, evaluate, train
 
 
 def make_randomized_adjacency(adj: torch.Tensor, seed: int = 999) -> torch.Tensor:
@@ -60,8 +59,6 @@ def make_randomized_adjacency(adj: torch.Tensor, seed: int = 999) -> torch.Tenso
     # Extract edge list
     rows, cols = np.where(np.triu(adj_np, k=1) > 0)
     edges = list(zip(rows.tolist(), cols.tolist()))
-    n_edges = len(edges)
-
     # Random permutation of node labels — this breaks community structure
     perm = rng.permutation(N)
 
@@ -239,8 +236,8 @@ def main():
 
     # ── Save training curves and embedding visualizations ────────────────────
     try:
-        import matplotlib.pyplot as plt
         import matplotlib
+        import matplotlib.pyplot as plt
         from sklearn.decomposition import PCA
 
         matplotlib.use("Agg")  # headless rendering

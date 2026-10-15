@@ -3,7 +3,6 @@ Shared pytest fixtures for GraphForge tests.
 """
 
 import pytest
-import torch
 
 from graphforge.data.synthetic import make_two_community_graph
 from graphforge.models.gcn_scratch import TwoLayerGCN, preprocess_adjacency

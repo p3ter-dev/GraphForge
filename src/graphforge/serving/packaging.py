@@ -7,15 +7,14 @@ GraphForge Assignment 4: Reproducible GNN MLOps Pipeline
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+
 import torch
 import torch.nn as nn
 
 from graphforge.data.cora import CORA_CLASSES
-from graphforge.models.cora_models import CoraGCN, CoraMLP, CoraGraphSAGE, CoraGAT
-
+from graphforge.models.cora_models import CoraGAT, CoraGCN, CoraGraphSAGE, CoraMLP
 
 SUPPORTED_ARCHITECTURES = {
     "CoraGCN": CoraGCN,

@@ -39,7 +39,6 @@ Note: We use the SAME trained model weights for both runs.
 The permutation affects data layout, not model parameters.
 """
 
-import numpy as np
 import pytest
 import torch
 

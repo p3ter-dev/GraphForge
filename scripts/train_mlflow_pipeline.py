@@ -13,10 +13,9 @@ End-to-end MLOps pipeline implementing:
 from __future__ import annotations
 
 import argparse
-import json
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
@@ -24,19 +23,24 @@ os.environ["MLFLOW_DISABLE_AGENT_HINT"] = "1"
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import torch
 import mlflow
+import torch
 
-from graphforge.data.cora import load_cora_dataset, get_cora_statistics
+from graphforge.data.cora import get_cora_statistics, load_cora_dataset
 from graphforge.models.cora_models import CoraGCN
-from graphforge.training.cora_trainer import CoraTrainingConfig, train_cora_model, evaluate_cora_model, set_seed
-from graphforge.serving.packaging import package_model, load_packaged_model
-from graphforge.serving.registry import ModelRegistry, ModelRegistrationRecord
 from graphforge.monitoring.drift import (
-    compute_graph_structure_metrics,
     compute_embedding_distribution_metrics,
+    compute_graph_structure_metrics,
     detect_distribution_drift,
     explain_embedding_incomparability,
+)
+from graphforge.serving.packaging import load_packaged_model, package_model
+from graphforge.serving.registry import ModelRegistrationRecord, ModelRegistry
+from graphforge.training.cora_trainer import (
+    CoraTrainingConfig,
+    evaluate_cora_model,
+    set_seed,
+    train_cora_model,
 )
 
 
@@ -234,7 +238,7 @@ def main():
         normal_emb = reloaded_model.get_embeddings(data.x, normal_edges)
 
     normal_drift = detect_distribution_drift(base_emb, normal_emb, alpha=0.05, wasserstein_threshold=0.30)
-    print(f"\n  Snapshot A (Normal Data):")
+    print("\n  Snapshot A (Normal Data):")
     print(f"    Wasserstein Distance: {normal_drift['wasserstein_distance']:.4f} | KS p-value: {normal_drift['p_value']:.4f}")
     print(f"    Drift Detected: {normal_drift['drift_detected']} ({normal_drift['alert_reason']})")
 
@@ -245,7 +249,7 @@ def main():
         drifted_emb = reloaded_model.get_embeddings(drifted_x, scrambled_edges)
 
     severe_drift = detect_distribution_drift(base_emb, drifted_emb, alpha=0.05, wasserstein_threshold=0.30)
-    print(f"\n  Snapshot B (Severe Covariate & Structural Shift):")
+    print("\n  Snapshot B (Severe Covariate & Structural Shift):")
     print(f"    Wasserstein Distance: {severe_drift['wasserstein_distance']:.4f} | KS p-value: {severe_drift['p_value']:.4e}")
     print(f"    Drift Detected: {severe_drift['drift_detected']} (ALERT: {severe_drift['alert_reason']})")
 

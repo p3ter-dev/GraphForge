@@ -12,11 +12,11 @@ import torch
 import torch.nn.functional as F
 from fastapi.testclient import TestClient
 
-from api.main import app, SERVICE_STATE
-from graphforge.data.cora import load_cora_dataset, CORA_CLASSES
+from api.main import SERVICE_STATE, app
+from graphforge.data.cora import CORA_CLASSES
 from graphforge.models.cora_models import CoraGCN
-from graphforge.serving.packaging import package_model, load_packaged_model
-from graphforge.serving.registry import ModelRegistry, ModelRegistrationRecord
+from graphforge.serving.packaging import package_model
+from graphforge.serving.registry import ModelRegistry
 
 
 @pytest.fixture(scope="module")
@@ -44,15 +44,6 @@ def setup_test_model(tmp_path_factory):
 
     reg_file = temp_dir / "registry.json"
     registry = ModelRegistry(registry_file=reg_file)
-    rec = ModelRegistrationRecord(
-        version="1.0.0-test",
-        model_name="cora_gcn",
-        architecture="CoraGCN",
-        package_dir=str(pkg_dir),
-        metrics={"val_acc": 0.82},
-        status="champion",
-        registered_at="2026-10-14T12:00:00Z",
-    )
     registry.data["current_champion"] = "1.0.0-test"
     registry.data["models"]["1.0.0-test"] = {
         "version": "1.0.0-test",

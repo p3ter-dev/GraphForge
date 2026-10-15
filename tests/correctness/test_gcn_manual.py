@@ -16,16 +16,14 @@ not just that it runs without errors.
 """
 
 import numpy as np
-import pytest
 import torch
-import torch.nn as nn
 
 from graphforge.models.gcn_scratch import (
     GCNLayerScratch,
     add_self_loops,
+    compute_degree,
     preprocess_adjacency,
     symmetric_normalize,
-    compute_degree,
 )
 
 
