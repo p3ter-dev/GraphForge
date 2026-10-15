@@ -38,7 +38,6 @@ import random
 
 import numpy as np
 import torch
-from torch import Tensor
 
 
 def make_two_community_graph(

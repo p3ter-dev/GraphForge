@@ -60,4 +60,4 @@ reports/presentation_guide.md
 docker/.env
 
 # Raw datasets
-data/
+/data/
