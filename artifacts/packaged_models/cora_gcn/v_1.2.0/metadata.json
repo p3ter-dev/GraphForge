@@ -32,11 +32,11 @@
     "val_acc": 0.7940000295639038,
     "test_accuracy": 0.815,
     "test_macro_f1": 0.8046707969980638,
-    "training_time_seconds": 1.860598087310791,
+    "training_time_seconds": 3.946061134338379,
     "best_epoch": 6
   },
   "extra_metadata": {
-    "git_commit": "55c2414",
-    "run_id": "b322bea1cde6464c9951bf610d12f1c7"
+    "git_commit": "e5b3d89",
+    "run_id": "d9cf2657a9b848108f392e30e698a4dd"
   }
 }

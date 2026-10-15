@@ -62,7 +62,26 @@ def main():
     art_dir.mkdir(parents=True, exist_ok=True)
     db_path = art_dir / "mlflow.db"
     mlflow.set_tracking_uri(f"sqlite:///{db_path.resolve()}")
-    mlflow.set_experiment("GraphForge-Cora-MLOps")
+
+    mlruns_dir = art_dir / "mlruns"
+    mlruns_dir.mkdir(parents=True, exist_ok=True)
+    exp_name = "GraphForge-Cora-MLOps"
+    exp_artifact_loc = str((mlruns_dir / "GraphForge-Cora-MLOps").resolve())
+
+    if db_path.exists():
+        import sqlite3
+        with sqlite3.connect(db_path) as conn:
+            conn.execute(
+                "UPDATE experiments SET artifact_location = ? WHERE name = ?",
+                (exp_artifact_loc, exp_name),
+            )
+            conn.commit()
+
+    try:
+        mlflow.create_experiment(exp_name, artifact_location=exp_artifact_loc)
+    except Exception:
+        pass
+    mlflow.set_experiment(exp_name)
 
     print("\n[1/6] Loading Cora dataset...")
     _, data = load_cora_dataset(root="data/Cora")
