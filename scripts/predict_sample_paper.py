@@ -12,9 +12,10 @@ import sys
 import urllib.request
 from pathlib import Path
 
-import torch
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))  # noqa: E402
+# isort: split
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+import torch
 
 from graphforge.data.cora import CORA_CLASSES, load_cora_dataset
 from graphforge.serving.packaging import load_packaged_model

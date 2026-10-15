@@ -21,7 +21,8 @@ from pathlib import Path
 os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
 os.environ["MLFLOW_DISABLE_AGENT_HINT"] = "1"
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))  # noqa: E402
+# isort: split
 
 import mlflow
 import torch

@@ -24,14 +24,12 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Create virtual environment
-        run: uv venv --python ${{ matrix.python-version }} .venv
-
       - name: Install dependencies (CPU torch for CI)
         run: |
           uv pip install -e ".[dev]" \
             --index-url https://download.pytorch.org/whl/cpu \
-            --extra-index-url https://pypi.org/simple
+            --extra-index-url https://pypi.org/simple \
+            ruff==0.17.0
 
       - name: Lint with ruff
         run: uv run ruff check src/ tests/ scripts/ api/ --output-format=github

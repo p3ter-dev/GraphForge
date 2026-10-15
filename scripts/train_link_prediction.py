@@ -23,7 +23,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))  # noqa: E402
+# isort: split
 
 import matplotlib
 import numpy as np
