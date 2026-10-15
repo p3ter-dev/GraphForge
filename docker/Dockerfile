@@ -12,7 +12,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY pyproject.toml ./
 
 # Install pre-built binary wheels using CPU PyTorch
-RUN uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu -e .
+RUN uv pip install --system --index-strategy unsafe-best-match --extra-index-url https://download.pytorch.org/whl/cpu -e .
 
 # Copy application source and artifacts
 COPY src/ /app/src/
