@@ -29,10 +29,10 @@ jobs:
 
       - name: Install dependencies (CPU torch for CI)
         run: |
-          uv pip install --python .venv -e ".[dev]" \
+          .venv/bin/pip install -e ".[dev]" \
             --index-url https://download.pytorch.org/whl/cpu \
             --extra-index-url https://pypi.org/simple
-          uv pip install --python .venv "ruff==0.4.10"
+          .venv/bin/pip install "ruff==0.4.10"
 
       - name: Lint with ruff
         run: .venv/bin/ruff check src/ tests/ scripts/ api/ --output-format=github
