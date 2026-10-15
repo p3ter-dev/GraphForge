@@ -32,27 +32,27 @@ jobs:
           uv pip install --python .venv -e ".[dev]" \
             --index-url https://download.pytorch.org/whl/cpu \
             --extra-index-url https://pypi.org/simple
-          uv pip install --python .venv "ruff==0.17.0"
+          uv pip install --python .venv "ruff==0.4.10"
 
       - name: Lint with ruff
         run: .venv/bin/ruff check src/ tests/ scripts/ api/ --output-format=github
 
       - name: Run unit tests
-        run: uv run --python .venv pytest tests/unit/ -v --tb=short
+        run: .venv/bin/pytest tests/unit/ -v --tb=short
 
       - name: Run correctness tests (A1 Permutation Equivariance & Manual Hand-Calculations)
-        run: uv run --python .venv pytest tests/correctness/ -v --tb=short
+        run: .venv/bin/pytest tests/correctness/ -v --tb=short
 
       - name: Run leakage tests (A3 Message Passing Split Disjointness & Symmetric Decoder)
-        run: uv run --python .venv pytest tests/leakage/ -v --tb=short
+        run: .venv/bin/pytest tests/leakage/ -v --tb=short
 
       - name: Run integration tests (A4 API Offline Agreement & Edge Cases)
-        run: uv run --python .venv pytest tests/integration/ -v --tb=short
+        run: .venv/bin/pytest tests/integration/ -v --tb=short
 
       - name: Run MLOps pipeline end-to-end verification
         run: |
-          uv run --python .venv python scripts/train_mlflow_pipeline.py
-          uv run --python .venv python scripts/demonstrate_inductive_inference.py
+          .venv/bin/python scripts/train_mlflow_pipeline.py
+          .venv/bin/python scripts/demonstrate_inductive_inference.py
 
       - name: Upload coverage report
         if: always()
